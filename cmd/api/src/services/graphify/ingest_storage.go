@@ -137,7 +137,7 @@ func ExtractIngestFiles(ctx context.Context, scratchDirectory string, fileServic
 		return []IngestFileData{
 			{
 				Name: providedFileName,
-				Path: providedFileName,
+				Path: storedFileName,
 			},
 		}, nil
 	}
@@ -151,7 +151,7 @@ func ExtractIngestFiles(ctx context.Context, scratchDirectory string, fileServic
 				Path:   storedFileName,
 				Errors: []string{fmt.Sprintf("Error spooling archive to scratch: %v", err)},
 			},
-		}, nil
+		}, err
 	}
 	defer os.Remove(scratchPath)
 
@@ -179,7 +179,7 @@ func ExtractIngestFiles(ctx context.Context, scratchDirectory string, fileServic
 
 		processedFileData := IngestFileData{
 			Name:       archiveFile.Name,
-			ParentFile: storedFileName,
+			ParentFile: providedFileName,
 		}
 
 		if extractedPath, err := WriteArchiveFileToStorage(ctx, fileService, archiveFile, prefix); err != nil {
@@ -201,5 +201,5 @@ func ExtractIngestFiles(ctx context.Context, scratchDirectory string, fileServic
 		)
 	}
 
-	return fileData, nil
+	return fileData, errs.Combined()
 }
