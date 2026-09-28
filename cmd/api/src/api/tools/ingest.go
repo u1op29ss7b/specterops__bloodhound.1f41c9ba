@@ -118,7 +118,7 @@ func (s *IngestControl) FetchRetainedIngestFiles(response http.ResponseWriter, r
 		return
 	}
 
-	files, err := s.retainedFileService.ListFiles(request.Context(), "", storage.ListOptions{})
+	files, err := s.retainedFileService.ListFiles(request.Context(), "", storage.ListOptions{Recursive: true})
 	if err != nil {
 		slog.WarnContext(request.Context(), "Failed listing retained files", attr.Error(err))
 		response.WriteHeader(http.StatusInternalServerError)
@@ -138,7 +138,7 @@ func (s *IngestControl) FetchRetainedIngestFiles(response http.ResponseWriter, r
 	fileWritten := false
 	fileFailed := false
 	for _, file := range files {
-		if !file.IsDir {
+		if file.IsDir {
 			continue
 		}
 
@@ -156,7 +156,7 @@ func (s *IngestControl) FetchRetainedIngestFiles(response http.ResponseWriter, r
 		fileWritten = true
 	}
 
-	if fileFailed || !fileWritten {
+	if fileFailed && !fileWritten {
 		response.WriteHeader(http.StatusInternalServerError)
 	} else {
 		response.WriteHeader(http.StatusOK)
