@@ -2041,7 +2041,7 @@ func ConvertAzureRoleManagementPolicyAssignment(policyAssignment models.RoleMana
 		for _, approver := range policyAssignment.EndUserAssignmentGroupApprovers {
 			rels = append(rels, NewIngestibleRelationship(IngestibleEndpoint{
 				Value: approver,
-				Kind:  azure.User,
+				Kind:  azure.Group,
 			}, IngestibleEndpoint{
 				Value: targetAZRole.ObjectID,
 				Kind:  targetAZRole.Labels[0],
@@ -2052,8 +2052,11 @@ func ConvertAzureRoleManagementPolicyAssignment(policyAssignment models.RoleMana
 		}
 	}
 
-	if len(policyAssignment.EndUserAssignmentUserApprovers) == 0 || len(policyAssignment.EndUserAssignmentGroupApprovers) == 0 {
-		combinedObjectId := fmt.Sprintf("%s@%s", azure.PrivilegedRoleAdministratorRole, policyAssignment.TenantId)
+	if len(policyAssignment.EndUserAssignmentUserApprovers) == 0 && len(policyAssignment.EndUserAssignmentGroupApprovers) == 0 {
+		// No approvers: create the edge from the tenant's PrivilegedRoleAdministratorRole node to the target role.
+		// Uppercase the lowercase well-known constant to match the collector-sourced node objectid; under
+		// use_raw_object_id, relationship ingestion no longer normalizes it, so uppercasing here avoids a split node.
+		combinedObjectId := fmt.Sprintf("%s@%s", strings.ToUpper(azure.PrivilegedRoleAdministratorRole), policyAssignment.TenantId)
 
 		rels = append(rels, NewIngestibleRelationship(IngestibleEndpoint{
 			Value: combinedObjectId,
