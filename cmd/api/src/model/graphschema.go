@@ -963,8 +963,8 @@ func (s GraphExtensionPayload) ToGraphExtensionInput() (GraphExtensionInput, err
 	for _, environmentPayload := range s.GraphEnvironments {
 		graphExtension.EnvironmentsInput = append(graphExtension.EnvironmentsInput,
 			EnvironmentInput{
-				EnvironmentKindName: environmentPayload.SourceKind,
-				SourceKindName:      environmentPayload.EnvironmentKind,
+				EnvironmentKindName: environmentPayload.EnvironmentKind,
+				SourceKindName:      environmentPayload.SourceKind,
 				PrincipalKinds:      environmentPayload.PrincipalKinds,
 			})
 	}
@@ -986,13 +986,13 @@ func (s GraphExtensionPayload) ToGraphExtensionInput() (GraphExtensionInput, err
 	// Optional components are only mapped when present
 	if s.PZRules != nil {
 		graphExtension.PZRulesInput = make(PZRulesInput, 0, len(s.PZRules.Rules))
-		autoCertify = SelectorAutoCertifyMethodDisabled
-		selectorSeeds = make([]SelectorSeedInput, 0)
 		for _, rulePayload := range s.PZRules.Rules {
+			autoCertify = SelectorAutoCertifyMethodDisabled
 			if rulePayload.AutoCertify != nil && *rulePayload.AutoCertify {
 				autoCertify = SelectorAutoCertifyMethodAllMembers
 			}
 
+			selectorSeeds = make([]SelectorSeedInput, 0, len(rulePayload.Seeds))
 			for _, seedPayload := range rulePayload.Seeds {
 				selectorSeeds = append(selectorSeeds, SelectorSeedInput(seedPayload))
 			}
